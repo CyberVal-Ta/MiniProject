@@ -15,17 +15,21 @@ import json
 from datetime import datetime
 
 
-# ---------- CONFIG ----------
+# config stuff
 FLOATING_PET    = True
 USE_IMAGES      = True
 ALWAYS_ON_TOP   = True
-WOLF_IMAGE_SIZE = 190
+WOLF_IMAGE_SIZE = 220        # max dimension (aspect preserved)
+
+# show a heart even during the greeting? if False, heart only appears after
+# they pick a mood. if True, the space is never empty and nothing jumps.
+HEART_ON_GREETING = False
 
 
-IMG_QUESTION = "ProjectImages/QuestionWolf.png"
 IMG_NORMAL   = "ProjectImages/NormalWolf.png"
 IMG_SAD      = "ProjectImages/SadWolf.png"
 IMG_HAPPY    = "ProjectImages/HappyWolf.png"
+IMG_QUESTION = "ProjectImages/QuestionWolf.png"
 
 CONFIG_FILE = "config.json"
 
@@ -38,7 +42,7 @@ DEFAULT_THEME = {
 }
 
 
-# ---------- MESSAGES ----------
+# messages!!
 GREETINGS = [
     "How was your day, {name}?",
     "Hey {name}! How are you feeling?",
@@ -127,10 +131,26 @@ BIRTHDAY_MESSAGES = [
     "I saved you a heart 💕! Happy birthday, {name}!",
 ]
 
+# ok so this is the special nockai/nocky birthday stuff
+# if theyre named nockai or nocky AND its their birthday, they get these instead
+# i made them extra special for them cause they deserve it
+NOCKAI_BIRTHDAY_MESSAGES = [
+    "HAPPY BIRTHDAY NOCKAI!!! 🎉🎂 i saved you a WHOLE CAKE and i'm not even sharing it with anyone else ok it's all yours I genuinely don’t think I’ll ever be able to put into words just how much you mean to me, but I’m going to try anyway. You’re not just my best friend. You’ve become such a deeply important part of my life, someone who has been there through so many different versions of me, through the good days, the awful days, the moments where I felt completely lost, and the moments where I felt genuinely happy. And somehow, through all of it, you’ve stayed.",
+    "NOCKAIIIII IT'S YOUR BIRTHDAY!!! 🎉 did you know you're literally the best?? cause you are. happy birthday!! I think one of the most beautiful things about our friendship is that you’ve seen me in moments where I wasn’t at my best and never made me feel like I had to become someone else to deserve your friendship. You’ve listened to me when I needed to talk, stayed when I needed someone beside me, made me laugh when I probably didn’t feel like laughing, and reminded me that I wasn’t alone even when I felt like I was.",
+    "happy birthday nockai!!! 🎂🥳 i would howl for you but i'm too excited so here's a heart instead 💕 There are people who come into your life for a season, people you meet because your paths happen to cross, and then there are people who somehow become part of your story. You are one of those people for me. When I look back at everything we’ve been through, I honestly can’t imagine my life without all the memories, conversations, stupid jokes, late-night talks, random moments, and little things that somehow became some of my favourite memories.",
+    "NOCKY!!! 🎉🎂 HAPPY BIRTHDAY you wonderful human!!! i hope today is as amazing as you are!! I hope you know that your presence in my life has mattered more than you probably realise. You’ve made difficult moments easier simply by being there. You’ve made good moments even better. And even when you probably thought you were doing something small, there have been so many times where your kindness, patience, or just having you there meant the world to me.",
+    "ok so it's nockai's birthday today and i just want everyone to know how cool they are 🎉🎂 happy birthday!!! I’m so grateful that I get to call you my best friend. I’m grateful for every version of our friendship we’ve had and every version that’s still ahead of us. I hope that as we grow older, change, meet new people, and go through different chapters of life, we never forget how special this friendship has been to us. And no matter where life takes us, I want you to know that I’ll always be grateful that our paths crossed. Thank you for being my safe place, my person, my best friend, and someone I can always count on.",
+    "NOCKAI HAPPY BIRTHDAYYYYYY!!!!! 🥳🎂🎉 you get ALL the hearts today 💕💕💕💕💕 On your birthday, I hope you remember how loved you are. Not just today, but every day. You deserve people who appreciate your heart, who listen to you, who celebrate you, and who stay when things aren't easy. I hope this next year gives you so many reasons to smile, so many memories that you’ll look back on years from now, and so many moments where you realise just how far you’ve come.",
+    "howly moly it's nockai's birthday!!! 🎂🎉 i'm so happy you exist!!! happy birthday!!! I love you more than I probably say enough, and I hope you never forget how much you mean to me. Here’s to another year of us, and hopefully a lifetime of memories we haven’t even made yet. ",
+]
+
 HEARTS = ["❤️", "💛", "💚", "💙", "💜", "🖤", "🤍", "💖", "💗", "💓", "💕"]
 
+# names that trigger the special birthday messages (case insensitive)
+SPECIAL_BIRTHDAY_NAMES = ["nockai", "nocky"]
 
-# ---------- CONFIG LOAD / SAVE ----------
+
+# loading and saving the config file
 def load_config():
     if os.path.exists(CONFIG_FILE):
         try:
@@ -149,7 +169,7 @@ def save_config(config):
         print(f"Error saving config: {e}")
 
 
-# ---------- RESOURCE HELPER ----------
+# for the exe — makes sure images load when its bundled up
 def resource_path(relative_path):
     try:
         base_path = sys._MEIPASS
@@ -158,11 +178,11 @@ def resource_path(relative_path):
     return os.path.join(base_path, relative_path)
 
 
-# ---------- EMOJI → IMAGE (so hearts show in colour) ----------
+# render an emoji to a tkinter image so hearts show in colour (windows thing)
 def emoji_to_image(emoji_char, size=64):
-    """Render an emoji to a Tkinter PhotoImage using Pillow (colour on Windows)."""
     try:
         from PIL import Image, ImageDraw, ImageFont, ImageTk
+
         font = None
         for name in ["seguiemj.ttf", "Segoe UI Emoji", "Apple Color Emoji", "NotoColorEmoji.ttf"]:
             try:
@@ -170,20 +190,29 @@ def emoji_to_image(emoji_char, size=64):
                 break
             except Exception:
                 continue
+
         if font is None:
             return None
-        img = Image.new("RGBA", (size + 40, size + 40), (0, 0, 0, 0))
+
+        canvas_size = size * 3
+        img = Image.new("RGBA", (canvas_size, canvas_size), (0, 0, 0, 0))
         draw = ImageDraw.Draw(img)
-        draw.text((20, 20), emoji_char, font=font, embedded_color=True)
+        draw.text((canvas_size // 2, canvas_size // 2),
+                  emoji_char, font=font, embedded_color=True, anchor="mm")
+
+        # crop tight so it centers properly
+        bbox = img.getbbox()
+        if bbox:
+            img = img.crop(bbox)
+
         return ImageTk.PhotoImage(img)
     except Exception as e:
         print(f"[emoji] render failed: {e}")
         return None
 
 
-# ---------- BIRTHDAY CHECK ----------
+# is it their birthday today?
 def is_birthday(birthday_str):
-    """birthday_str should be MM-DD, e.g. '01-15'. Empty = no birthday."""
     if not birthday_str:
         return False
     try:
@@ -193,7 +222,14 @@ def is_birthday(birthday_str):
         return False
 
 
-# ---------- APP ----------
+# is this one of the special names that gets the extra special birthday stuff?
+def is_special_birthday_name(name):
+    if not name:
+        return False
+    return name.strip().lower() in SPECIAL_BIRTHDAY_NAMES
+
+
+# the actual app
 class WolfApp:
     def __init__(self, root):
         self.root = root
@@ -221,18 +257,16 @@ class WolfApp:
         self.build_ui()
         self.refresh_greeting()
 
-        # Initial size + center on screen
+        # initial size + center on screen
         self.autosize(center=True)
 
-    # ---------- AUTO SIZE ----------
+    # resize the window to fit whats inside it
     def autosize(self, center=False):
-        """Resize the window so it snugly fits its contents."""
         self.root.update_idletasks()
 
         w = self.card.winfo_reqwidth() + 20
         h = self.card.winfo_reqheight() + 20
 
-        # Sensible clamp so it never goes crazy
         w = max(360, min(w, 620))
         h = max(400, min(h, 950))
 
@@ -253,7 +287,7 @@ class WolfApp:
 
         self.root.geometry(f"{w}x{h}+{x}+{y}")
 
-    # ---------- UI ----------
+    # build everythingggg
     def build_ui(self):
         t = self.theme
 
@@ -263,7 +297,7 @@ class WolfApp:
         )
         self.card.pack(fill="both", expand=True, padx=10, pady=10)
 
-        # ---- Reserve bottom area FIRST so Reset is never pushed off ----
+        # reserve the bottom FIRST so the reset button never gets pushed off
         bottom_area = tk.Frame(self.card, bg=t["bg"])
         bottom_area.pack(side="bottom", fill="x", pady=(6, 12))
 
@@ -275,7 +309,7 @@ class WolfApp:
         )
         self.reset_btn.pack()
 
-        # ---- Close button ----
+        # close button (the little x)
         self.close_btn = tk.Label(
             self.card, text="X", bg=t["btn_bg"], fg=t["btn_text"],
             font=("Calibri", 10, "bold"), cursor="hand2", padx=5, pady=2,
@@ -283,7 +317,7 @@ class WolfApp:
         self.close_btn.place(relx=1.0, rely=0.0, anchor="ne")
         self.close_btn.bind("<Button-1>", lambda e: self.root.destroy())
 
-        # ---- Settings button ----
+        # settings gear
         self.settings_btn = tk.Label(
             self.card, text="⚙", bg=t["btn_bg"], fg="#616eba",
             font=("Calibri", 10, "bold"), cursor="hand2", padx=5, pady=2,
@@ -291,7 +325,7 @@ class WolfApp:
         self.settings_btn.place(relx=0.0, rely=0.0, anchor="nw")
         self.settings_btn.bind("<Button-1>", lambda e: self.open_settings())
 
-        # ---- Wolf image ----
+        # the wolf!!
         self.wolf_label = tk.Label(
             self.card, bg=t["bg"], text="🐺",
             font=("Segoe UI Emoji", 50),
@@ -300,7 +334,7 @@ class WolfApp:
         if USE_IMAGES:
             self.set_wolf_image(IMG_QUESTION)
 
-        # ---- Speech bubble ----
+        # speech bubble
         self.bubble = tk.Label(
             self.card, text="...", bg=t["bubble"], fg=t["text"],
             font=("Calibri", 12), wraplength=280, justify="center",
@@ -309,7 +343,7 @@ class WolfApp:
         )
         self.bubble.pack(pady=10, padx=10)
 
-        # ---- Mood buttons ----
+        # mood buttons
         btn_row = tk.Frame(self.card, bg=t["bg"])
         btn_row.pack(pady=10)
 
@@ -325,26 +359,42 @@ class WolfApp:
             b.pack(side="left", padx=5)
             self.buttons.append(b)
 
-        # ---- Heart ----
+        # heart — no fixed height so it collapses when empty
         self.heart_label = tk.Label(
-            self.card, text="", bg=t["bg"], font=("Segoe UI Emoji", 30),
+            self.card, text="", bg=t["bg"],
         )
         self.heart_label.pack(pady=(4, 0))
 
-    # ---------- GREETING ----------
+    # pick the greeting — birthday overrides but we still combine em
     def refresh_greeting(self):
         greeting = self._pick_greeting()
         if is_birthday(self.birthday):
-            birthday_line = self.fill(random.choice(BIRTHDAY_MESSAGES))
+            birthday_line = self.fill(self._pick_birthday_message())
             greeting_line = self.fill(greeting)
             msg = f"{birthday_line}\n\n{greeting_line}"
         else:
             msg = self.fill(greeting)
         self.set_bubble_text(msg)
 
+        # greeting wolf = QuestionWolf
+        if USE_IMAGES:
+            self.set_wolf_image(IMG_QUESTION)
+
+        # heart on greeting (optional, controlled by HEART_ON_GREETING)
+        if HEART_ON_GREETING:
+            self.show_heart()
+        else:
+            self.clear_heart()
+
     def _pick_greeting(self):
         pool = GREETINGS if self.name else GREETINGS_NO_NAME
         return random.choice(pool)
+
+    # picks a birthday message — special one if theyre nockai or nocky!
+    def _pick_birthday_message(self):
+        if is_special_birthday_name(self.name):
+            return random.choice(NOCKAI_BIRTHDAY_MESSAGES)
+        return random.choice(BIRTHDAY_MESSAGES)
 
     def fill(self, text):
         if self.name:
@@ -359,12 +409,11 @@ class WolfApp:
         return cleaned.strip()
 
     def set_bubble_text(self, msg):
-        """Set the bubble's text. Wrap width is chosen so text fills the card nicely."""
         wrap = max(220, self.card.winfo_width() - 40) if self.card.winfo_width() > 1 else 300
         self.bubble.config(text=msg, wraplength=wrap, justify="center")
         self.autosize()
 
-    # ---------- DRAGGING ----------
+    # draggin the wolf around
     def start_drag(self, event):
         self.drag_start_x = event.x
         self.drag_start_y = event.y
@@ -374,12 +423,14 @@ class WolfApp:
         y = self.root.winfo_y() + event.y - self.drag_start_y
         self.root.geometry(f"+{x}+{y}")
 
-    # ---------- IMAGES ----------
+    # load a wolf image, keeps the aspect ratio so they dont get squished
     def set_wolf_image(self, path):
         try:
             from PIL import Image, ImageTk
             full = resource_path(path)
-            img = Image.open(full).resize((WOLF_IMAGE_SIZE, WOLF_IMAGE_SIZE), Image.LANCZOS)
+            img = Image.open(full).convert("RGBA")
+            img.thumbnail((WOLF_IMAGE_SIZE, WOLF_IMAGE_SIZE), Image.LANCZOS)
+
             self.wolf_photo = ImageTk.PhotoImage(img)
             self.wolf_label.config(image=self.wolf_photo, text="")
             self.autosize()
@@ -387,7 +438,7 @@ class WolfApp:
             print(f"Error loading image: {e}")
             self.wolf_label.config(text="🐺", image="")
 
-    # ---------- HEART ----------
+    # the little heart!!
     def show_heart(self):
         heart_char = random.choice(HEARTS)
         img = emoji_to_image(heart_char, size=64)
@@ -404,7 +455,7 @@ class WolfApp:
         self.heart_label.config(text="", image="")
         self.autosize()
 
-    # ---------- MOOD ----------
+    # they clicked a mood!
     def handle_mood(self, mood):
         if self.is_answered:
             return
@@ -414,7 +465,7 @@ class WolfApp:
             b.config(state="disabled")
 
         if is_birthday(self.birthday):
-            bday = self.fill(random.choice(BIRTHDAY_MESSAGES))
+            bday = self.fill(self._pick_birthday_message())
             reply = self.fill(random.choice(RESPONSES[mood]))
             msg = f"{bday}\n\n{reply}"
         else:
@@ -423,9 +474,15 @@ class WolfApp:
         self.set_bubble_text(msg)
         self.show_heart()
 
+        # mood wolf:
+        #   good   → HappyWolf
+        #   okay   → NormalWolf
+        #   normal → SadWolf
         if USE_IMAGES:
             if mood == "good":
                 self.set_wolf_image(IMG_HAPPY)
+            elif mood == "okay":
+                self.set_wolf_image(IMG_NORMAL)
             elif mood == "normal":
                 self.set_wolf_image(IMG_SAD)
 
@@ -438,7 +495,7 @@ class WolfApp:
         if USE_IMAGES:
             self.set_wolf_image(IMG_QUESTION)
 
-    # ---------- SETTINGS ----------
+    # the settings window
     def open_settings(self):
         win = tk.Toplevel(self.root)
         win.title("Settings")
@@ -534,7 +591,7 @@ class WolfApp:
                         activebackground=t["bubble"])
 
 
-# ---------- ENTRY ----------
+# go!!
 if __name__ == "__main__":
     root = tk.Tk()
     app = WolfApp(root)
