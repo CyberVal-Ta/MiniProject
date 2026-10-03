@@ -68,4 +68,4 @@ Click the ⚙ button in the corner of the wolf window to change your
 name or birthday at any time.
 
 # I hope you enjoy this mini project!
-By CyberV
+By CyberVal-Ta
