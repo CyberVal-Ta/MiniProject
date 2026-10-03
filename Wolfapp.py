@@ -19,12 +19,13 @@ from datetime import datetime
 FLOATING_PET    = True
 USE_IMAGES      = True
 ALWAYS_ON_TOP   = True
-WOLF_IMAGE_SIZE = (190)    
+WOLF_IMAGE_SIZE = 190
 
 
-IMG_NORMAL = "ProjectImages/NormalWolf.png"
-IMG_SAD    = "ProjectImages/SadWolf.png"
-IMG_HAPPY  = "ProjectImages/HappyWolf.png"
+IMG_QUESTION = "ProjectImages/QuestionWolf.png"
+IMG_NORMAL   = "ProjectImages/NormalWolf.png"
+IMG_SAD      = "ProjectImages/SadWolf.png"
+IMG_HAPPY    = "ProjectImages/HappyWolf.png"
 
 CONFIG_FILE = "config.json"
 
@@ -297,7 +298,7 @@ class WolfApp:
         )
         self.wolf_label.pack(pady=(20, 4))
         if USE_IMAGES:
-            self.set_wolf_image(IMG_NORMAL)
+            self.set_wolf_image(IMG_QUESTION)
 
         # ---- Speech bubble ----
         self.bubble = tk.Label(
@@ -359,11 +360,8 @@ class WolfApp:
 
     def set_bubble_text(self, msg):
         """Set the bubble's text. Wrap width is chosen so text fills the card nicely."""
-        # Wider wrap = shorter bubble. We base it on the card width so long
-        # messages stay inside the window.
         wrap = max(220, self.card.winfo_width() - 40) if self.card.winfo_width() > 1 else 300
         self.bubble.config(text=msg, wraplength=wrap, justify="center")
-        # Let the window resize to fit the new content
         self.autosize()
 
     # ---------- DRAGGING ----------
@@ -384,7 +382,6 @@ class WolfApp:
             img = Image.open(full).resize((WOLF_IMAGE_SIZE, WOLF_IMAGE_SIZE), Image.LANCZOS)
             self.wolf_photo = ImageTk.PhotoImage(img)
             self.wolf_label.config(image=self.wolf_photo, text="")
-            # Wolf size affects layout — re-fit the window
             self.autosize()
         except Exception as e:
             print(f"Error loading image: {e}")
@@ -439,7 +436,7 @@ class WolfApp:
         self.clear_heart()
         self.refresh_greeting()
         if USE_IMAGES:
-            self.set_wolf_image(IMG_NORMAL)
+            self.set_wolf_image(IMG_QUESTION)
 
     # ---------- SETTINGS ----------
     def open_settings(self):
