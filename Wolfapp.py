@@ -26,7 +26,7 @@ WOLF_IMAGE_SIZE = 220        # max dimension (aspect preserved)
 HEART_ON_GREETING = False
 
 
-IMG_NORMAL   = "ProjectImages/NormalWolf.png"
+IMG_normal/bad   = "ProjectImages/normal/badWolf.png"
 IMG_SAD      = "ProjectImages/SadWolf.png"
 IMG_HAPPY    = "ProjectImages/HappyWolf.png"
 IMG_QUESTION = "ProjectImages/QuestionWolf.png"
@@ -102,7 +102,7 @@ RESPONSES = {
         "Can't wait for it to get even better, {name}. I'm glad your day was okay.",
         "Can't wait to see howl it gets even better, {name}. I'm glad your day was okay.",
     ],
-    "normal": [
+    "normal/bad": [
         "I see. I hope your day gets better, {name}.",
         "I understand. I hope your day improves, {name}.",
         "I hear you. I hope your day gets better, {name}.",
@@ -348,7 +348,7 @@ class WolfApp:
         btn_row.pack(pady=10)
 
         self.buttons = []
-        for label, mood in [("Good", "good"), ("Okay", "okay"), ("Normal", "normal")]:
+        for label, mood in [("Good", "good"), ("Okay", "okay"), ("normal/bad", "normal/bad")]:
             b = tk.Button(
                 btn_row, text=label, bg=t["btn_bg"], fg=t["btn_text"],
                 font=("Calibri", 10), relief="flat", bd=0,
@@ -476,20 +476,20 @@ class WolfApp:
 
         # mood wolf:
         #   good   → HappyWolf
-        #   okay   → NormalWolf
-        #   normal → SadWolf
+        #   okay   → normal/badWolf
+        #   normal/bad → SadWolf
         if USE_IMAGES:
             if mood == "good":
                 self.set_wolf_image(IMG_HAPPY)
             elif mood == "okay":
-                self.set_wolf_image(IMG_NORMAL)
-            elif mood == "normal":
+                self.set_wolf_image(IMG_normal/bad)
+            elif mood == "normal/bad":
                 self.set_wolf_image(IMG_SAD)
 
     def reset(self):
         self.is_answered = False
         for b in self.buttons:
-            b.config(state="normal")
+            b.config(state="normal/bad")
         self.clear_heart()
         self.refresh_greeting()
         if USE_IMAGES:
